@@ -52,7 +52,7 @@ Pour exécuter le simulateur, exécutez la commande suivante depuis le répertoi
 ```
 
 ## Diagramme UML
-![Diagramme UML](path/to/uml-diagram.png)
+![Diagramme UML](docs/classes_uml_mvp.png)
 
 ## Contribuer
 Les contributions sont les bienvenues ! Veuillez lire les [directives de contribution](CONTRIBUTING.md) pour plus d'informations.

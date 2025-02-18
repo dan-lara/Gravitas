@@ -52,7 +52,7 @@ To run the simulator, execute the following command from the build directory:
 ```
 
 ## UML Diagram
-![UML Diagram](path/to/uml-diagram.png)
+![UML Diagram](docs/classes_uml_mvp.png)
 
 ## Contributing
 Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) for more information.
