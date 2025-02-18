@@ -1,0 +1,124 @@
+@startuml Gravitas
+
+class Vecteur {
+    -float x
+    -float y
+    -float z
+    +addition(Vecteur v) : Vecteur
+    +soustraction(Vecteur v) : Vecteur
+    +multiplication(float scalaire) : Vecteur
+    +norme() : float
+    +normalisation() : Vecteur
+}
+
+enum TYPE {
+    PLANETE
+    ETOILE
+    ASTEROIDE
+    COMETE
+}
+
+abstract class CorpsCeleste {
+    -int id
+    -float masse
+    -float rayon
+    -float densité
+    -Couleur couleur
+    -Vecteur position
+    -Vecteur vitesse
+    -Vecteur acceleration
+    -Vecteur forceResultant
+
+    +getters() : objet
+    +setters() : void
+}
+
+class Planetaire extends CorpsCeleste {
+    -string nom
+    -TYPE type
+    -Shader shader
+
+    +getters() : objet
+    +setters() : void
+}
+
+class Generic extends CorpsCeleste {
+
+    +getters() : objet
+    +setters() : void
+}
+
+' Système de gravitation qui gère les corps célestes et leurs interactions
+class SystèmeGravitationnel {
+    -List<CorpsCeleste> corpsCelestes
+
+    +addCorpsCeleste(List<CorpsCeleste> corps) : void
+    +calculerForces() : void
+    +actualiser(float deltaTime) : void
+    +dessiner(Renderer renderer) : void
+}
+
+' Moteur de simulation qui intègre le système et l'interface utilisateur
+class MoteurSimulation {
+    -SystèmeGravitationnel système
+    -InterfaceUtilisateur interface
+    -Renderer renderer
+    +run() : void
+}
+
+' Interface utilisateur pour ajouter, sélectionner et modifier les corps célestes
+interface InterfaceUtilisateur {
+    +afficherMenu() : void
+    +ajouterCorpsCeleste() : void
+    +sélectionnerCorpsCeleste() : CorpsCeleste
+    +modifierCorpsCeleste() : void
+} 
+
+' Interface de rendu pouvant être implémentée en SFML ou OpenGL
+interface Renderer {
+    +clear() : void
+    +renderCorps(CorpsCeleste corps) : void
+    +display() : void
+}
+
+' Implémentation du Renderer utilisant SFML
+class SFMLRenderer implements Renderer, InterfaceUtilisateur {
+    -RenderWindow window
+    -Font font
+    -CorpsCeleste objetSélectionné
+    +clear() : void
+    +renderCorps(CorpsCeleste corps) : void
+    +display() : void
+    +afficherMenu() : void
+    +ajouterCorpsCeleste() : void
+    +sélectionnerCorpsCeleste() : void
+    +modifierCorpsCeleste() : void
+}
+
+
+' Implémentation du Renderer utilisant OpenGL pour le rendu 3D
+class OpenGLRenderer implements Renderer {
+    - Camera3D camera
+    + clear() : void
+    + renderCorps(CorpsCeleste corps) : void
+    + display() : void
+}
+
+' Classe pour gérer la caméra dans l'environnement 3D (position, orientation et perspective)
+class Camera3D {
+    - Vecteur position
+    - Vecteur orientation
+    + setPerspective(float fov, float near, float far) : void
+    + move(Vecteur delta) : void
+    + rotate(Vecteur delta) : void
+}
+
+' Associations entre les classes
+SystèmeGravitationnel "1" *-- "*" CorpsCeleste : contient
+MoteurSimulation --> SystèmeGravitationnel : utilise
+MoteurSimulation --> InterfaceUtilisateur : utilise
+MoteurSimulation --> Renderer : utilise
+
+' OpenGLRenderer "1" *-- "1" Camera3D: contient
+
+@enduml
