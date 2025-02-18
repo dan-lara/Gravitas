@@ -104,6 +104,7 @@ class OpenGLRenderer implements Renderer {
     + display() : void
 }
 
+
 ' Classe pour gérer la caméra dans l'environnement 3D (position, orientation et perspective)
 class Camera3D {
     - Vecteur position
