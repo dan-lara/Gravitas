@@ -1,7 +1,10 @@
+.vscode
 .env
 
 *.o
 
+build
+out
 
 SFML-3.0.0/
 *.zip
