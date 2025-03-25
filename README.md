@@ -39,16 +39,16 @@ To install Gravitas, follow these steps:
     ```
 3. Build the project using CMake:
     ```sh
-    mkdir build
-    cd build
-    cmake ..
-    make
+    # cmake -B build
+    # cmake --build build
+    make build # or all
     ```
 
 ## Usage
 To run the simulator, execute the following command from the build directory:
 ```sh
-./Gravitas
+    # Run the project
+    make run
 ```
 
 ## UML Diagram
