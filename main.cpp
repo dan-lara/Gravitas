@@ -19,8 +19,8 @@ public:
     }
 
     void render(sf::RenderWindow &window) { window.draw(shape); }
-    sf::Vector2f getPos() { return pos; }
-    float getStrength() { return strength; }
+    sf::Vector2f getPos() const { return pos; }
+    float getStrength() const { return strength; }
 
     void update(float dt) {
         shape.rotate(sf::degrees(50 * dt));  // 旋转 50°/秒
@@ -91,6 +91,43 @@ public:
         shape.setPosition(pos);
         window.draw(shape);
     }
+
+    //预测轨迹
+    std::vector<sf::Vector2f> predictTrajectory(
+        const std::vector<GravitySource>& sources,
+        sf::Vector2f initialVelocity,
+        int steps = 200,
+        float dt = 1.0f
+    ) const {
+        std::vector<sf::Vector2f> prediction;
+    
+        sf::Vector2f futurePos = pos;
+        sf::Vector2f futureVel = initialVelocity;
+    
+        for (int i = 0; i < steps; ++i) {
+            sf::Vector2f acc(0.f, 0.f);
+            for (const auto& source : sources) {
+                sf::Vector2f diff = source.getPos() - futurePos;
+                float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+                if (dist < 1.f) continue;
+    
+                float force = source.getStrength() / (dist * dist);
+                sf::Vector2f dir = diff / dist;
+                acc += dir * force;
+            }
+    
+            futureVel += acc * dt;
+            futurePos += futureVel * dt;
+            prediction.push_back(futurePos);
+        }
+    
+        return prediction;
+    }
+    
+    
+
+
+
 
     void reset() {
         pos = {200, 800};
@@ -163,49 +200,45 @@ class LevelManager {
     };
     
 
-// class UIManager {
-//     sf::Font font;
-//     sf::Text levelText;
-//     sf::Text scoreText;
-//     sf::Text hintText;
+class UIManager {
+    sf::Font font;
+    sf::Text levelText;
+    sf::Text scoreText;
+    sf::Text hintText;
 
-// public:
-//     UIManager() {
-//         if (!font.loadFromFile("arial.ttf")) {  // ⚠ 确保你的目录有字体文件
-//             std::cerr << "无法加载字体文件！\n";
-//         }
+public:
+    UIManager() :
+        // 正确构造 text（传入字体、字符串、字号）
+        levelText(font, "level: 1", 24),
+        scoreText(font, "score: 0", 24),
+        hintText(font, "mouse drag for starting \n  press R to restart", 18)
+    {
+        if (!font.openFromFile("arial.ttf")) {
+            std::cerr << "can not load arial.ttf\n";
+        }
 
-//         // 关卡文本
-//         levelText.setFont(font);
-//         levelText.setCharacterSize(24);
-//         levelText.setFillColor(sf::Color::White);
-//         levelText.setPosition(20, 20);
+        levelText.setPosition(sf::Vector2f(20.f, 20.f));
+        scoreText.setPosition(sf::Vector2f(20.f, 50.f));
+        hintText.setPosition(sf::Vector2f(20.f, 80.f));
 
-//         // 分数文本
-//         scoreText.setFont(font);
-//         scoreText.setCharacterSize(24);
-//         scoreText.setFillColor(sf::Color::White);
-//         scoreText.setPosition(20, 50);
+        levelText.setFillColor(sf::Color::White);
+        scoreText.setFillColor(sf::Color::White);
+        hintText.setFillColor(sf::Color(200, 200, 200));
+    }
 
-//         // 提示文本
-//         hintText.setFont(font);
-//         hintText.setCharacterSize(18);
-//         hintText.setFillColor(sf::Color(200, 200, 200));
-//         hintText.setPosition(20, 80);
-//         hintText.setString("鼠标拖动发射飞船\n按 R 重新开始");
-//     }
+    void update(int level, int score) {
+        levelText.setString("level: " + std::to_string(level + 1));
+        scoreText.setString("score: " + std::to_string(score));
+    }
 
-//     void update(int level, int score) {
-//         levelText.setString("关卡: " + std::to_string(level + 1));
-//         scoreText.setString("分数: " + std::to_string(score));
-//     }
-
-//     void render(sf::RenderWindow &window) {
-//         window.draw(levelText);
-//         window.draw(scoreText);
-//         window.draw(hintText);
-//     }
-// };
+    void render(sf::RenderWindow& window) {
+        window.draw(levelText);
+        window.draw(scoreText);
+        window.draw(hintText);
+    }
+};
+    
+    
 
 
 
@@ -235,6 +268,7 @@ int main() {
     Spaceship ship(200, 800);
     //Destination goal(1400, 200);
     Destination goal(levelManager.goalPositions[levelManager.level].x, levelManager.goalPositions[levelManager.level].y);
+    UIManager ui;  // ✅ 添加 UI 管理器
 
     bool gameStarted = false;
     bool dragging = false;
@@ -317,6 +351,7 @@ int main() {
         ship.render(window);
 
         if (dragging) {
+            //
             sf::Vertex line[] = {
                 sf::Vertex{sf::Vector2f(launchStart.x, launchStart.y), sf::Color::White},
                 sf::Vertex{sf::Vector2f(static_cast<float>(sf::Mouse::getPosition(window).x), 
@@ -324,8 +359,31 @@ int main() {
                            sf::Color::White}
             };
             window.draw(line, 2, sf::PrimitiveType::Lines);
+
+            //
+            sf::Vector2f currentMouse = sf::Vector2f(sf::Mouse::getPosition(window));
+
+            sf::Vector2f simulatedVelocity = (launchStart - currentMouse) * 0.1f;
+            auto prediction = ship.predictTrajectory(blackHoles, simulatedVelocity);
+
+            std::vector<sf::Vertex> preview;
+            for (const auto& p : prediction) {
+                sf::Vertex v;
+                v.position = p;
+                v.color = sf::Color(255, 255, 0, 80); // 半透明黄色
+                preview.push_back(v);
+            }
+            window.draw(preview.data(), preview.size(), sf::PrimitiveType::LineStrip);
+            
+
+            
+
         }
         
+        ui.update(levelManager.level, score);  // ✅ 更新 UI
+        ui.render(window);  // ✅ 渲染 UI
+
+
 
         window.display();
     }
