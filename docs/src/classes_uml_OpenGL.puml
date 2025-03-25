@@ -1,0 +1,139 @@
+@startuml Gravitas_Modified
+
+' Classe para operações matemáticas fundamentais
+class Vecteur {
+    -float x
+    -float y
+    -float z
+    +addition(Vecteur v) : Vecteur
+    +soustraction(Vecteur v) : Vecteur
+    +multiplication(float scalaire) : Vecteur
+    +norme() : float
+    +normalisation() : Vecteur
+}
+
+enum TYPE {
+    PLANETE
+    ETOILE
+    ASTEROIDE
+    COMETE
+}
+
+' Classe abstrata que define os atributos e operações comuns aos corpos celestes
+abstract class CorpsCeleste {
+    -int id
+    -float masse
+    -float rayon
+    -float densité
+    -Couleur couleur
+    -Vecteur position
+    -Vecteur vitesse
+    -Vecteur acceleration
+    -Vecteur forceResultant
+    +getters() : objeto
+    +setters() : void
+    +update(float deltaTime) : void
+}
+
+' Especialização para corpos celestes com atributos adicionais
+class Planetaire extends CorpsCeleste {
+    -string nom
+    -TYPE type
+    -Shader shader
+    +getters() : objeto
+    +setters() : void
+}
+
+class Generic extends CorpsCeleste {
+    +getters() : objeto
+    +setters() : void
+}
+
+' Sistema de gravitação que agora utiliza módulos especializados para física e colisões
+class SystèmeGravitationnel {
+    -List<CorpsCeleste> corpsCelestes
+    -PhysicsEngine engine
+    -CollisionManager collisionManager
+    +addCorpsCeleste(CorpsCeleste corps) : void
+    +calculerForces() : void
+    +integrer(float deltaTime) : void
+    +gererCollisions() : void
+    +dessiner(Renderer renderer) : void
+}
+
+' Módulo responsável pelos cálculos de forças e integração temporal
+class PhysicsEngine {
+    +calculerForce(CorpsCeleste c1, CorpsCeleste c2) : Vecteur
+    +integrer(CorpsCeleste corps, float deltaTime) : void
+}
+
+' Módulo dedicado à detecção e resolução de colisões
+class CollisionManager {
+    +detecterCollisions(List<CorpsCeleste> corps) : List<Pair<CorpsCeleste, CorpsCeleste>>
+    +resoudreCollision(CorpsCeleste c1, CorpsCeleste c2) : CorpsCeleste
+}
+
+' Moteur de simulação que gerencia a interação entre o sistema físico, UI e renderização
+class MoteurSimulation {
+    -SystèmeGravitationnel système
+    -InterfaceUtilisateur interface
+    -Renderer renderer
+    +run() : void
+}
+
+' Interface de interação com o usuário para manipulação dos corpos celestes
+interface InterfaceUtilisateur {
+    +afficherMenu() : void
+    +ajouterCorpsCeleste() : void
+    +sélectionnerCorpsCeleste() : CorpsCeleste
+    +modifierCorpsCeleste() : void
+} 
+
+' Interface para os renderizadores
+interface Renderer {
+    +clear() : void
+    +renderCorps(CorpsCeleste corps) : void
+    +display() : void
+}
+
+' Implementação do renderer e UI usando SFML
+class SFMLRenderer implements Renderer, InterfaceUtilisateur {
+    -RenderWindow window
+    -Font font
+    -CorpsCeleste objetSélectionné
+    +clear() : void
+    +renderCorps(CorpsCeleste corps) : void
+    +display() : void
+    +afficherMenu() : void
+    +ajouterCorpsCeleste() : void
+    +sélectionnerCorpsCeleste() : CorpsCeleste
+    +modifierCorpsCeleste() : void
+}
+
+' Implementação do renderer usando OpenGL para renderização 3D
+class OpenGLRenderer implements Renderer {
+    -Camera3D camera
+    +clear() : void
+    +renderCorps(CorpsCeleste corps) : void
+    +display() : void
+}
+
+' Classe para gerenciamento da câmera em ambiente 3D
+class Camera3D {
+    -Vecteur position
+    -Vecteur orientation
+    +setPerspective(float fov, float near, float far) : void
+    +move(Vecteur delta) : void
+    +rotate(Vecteur delta) : void
+}
+
+' Associações entre as classes
+SystèmeGravitationnel "1" *-- "*" CorpsCeleste : contient
+SystèmeGravitationnel "1" o-- "1" PhysicsEngine : utilise
+SystèmeGravitationnel "1" o-- "1" CollisionManager : gere
+MoteurSimulation --> SystèmeGravitationnel : utilise
+MoteurSimulation --> InterfaceUtilisateur : utilise
+MoteurSimulation --> Renderer : utilise
+OpenGLRenderer "1" *-- "1" Camera3D : contient
+
+@enduml
