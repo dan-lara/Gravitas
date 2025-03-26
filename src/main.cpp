@@ -5,6 +5,21 @@
 #include <iostream>
 #include <vector>
 #include <optional>
+#include <cstdint>
+
+
+
+struct Particle {
+    sf::Vector2f pos;
+    sf::Vector2f vel;
+    float lifetime;
+    sf::Color color;
+
+    Particle(sf::Vector2f p, sf::Vector2f v)
+        : pos(p), vel(v), lifetime(0.5f), color(sf::Color::Red) {}
+};
+
+
 
 class GravitySource {
     sf::Vector2f pos;
@@ -31,6 +46,7 @@ public:
     
 };
 
+
 class Spaceship {
     sf::Vector2f pos;
     sf::Vector2f vel;
@@ -38,6 +54,9 @@ class Spaceship {
     std::vector<sf::Vector2f> trail; // 轨迹点
     bool active;
     bool hasFailed = false;
+    std::vector<Particle> particles;//粒子
+    bool boosting = false;
+
 
 
 public:
@@ -53,9 +72,12 @@ public:
         active = true;
     }
 
-    void updatePhysics(std::vector<GravitySource> &sources) {
+    void updatePhysics(std::vector<GravitySource> &sources, float dt) {
         if (!active) return;
         trail.push_back(pos); // 记录轨迹
+
+        trail.push_back(pos);
+        updateParticles(dt);  // 更新粒子
 
         for (auto &source : sources) {
             float dx = source.getPos().x - pos.x;
@@ -80,6 +102,16 @@ public:
     }
 
     void render(sf::RenderWindow &window) {
+
+        // 画粒子
+        for (const auto& p : particles) {
+            sf::CircleShape fire(3);
+            fire.setPosition(p.pos);
+            fire.setFillColor(p.color);
+            window.draw(fire);
+        }
+
+
         // 画轨迹
         if (!trail.empty()) {
             std::vector<sf::Vertex> trailVertices;
@@ -129,8 +161,50 @@ public:
         return prediction;
     }
     
+
+    //正向加速
+    void boost1() {
+        if (active) {
+            vel *= 1.5f;  // 简单加速方向（可改为背向方向）
+            boosting = true;
+    
+            // 生成粒子
+            for (int i = 0; i < 10; ++i) {
+                sf::Vector2f randomOffset{(rand() % 10 - 5) * 0.2f, (rand() % 10 - 5) * 0.2f};
+                sf::Vector2f particleVel = -vel * 0.2f + randomOffset;
+                particles.emplace_back(pos, particleVel);
+            }
+        }
+    }
+
+    //侧向加速
+    void boost2() {
+        if (active) {
+            vel += {-vel.y * 0.1f, vel.x * 0.1f};
+            boosting = true;
+    
+            // 生成粒子
+            for (int i = 0; i < 10; ++i) {
+                sf::Vector2f randomOffset{(rand() % 10 - 5) * 0.2f, (rand() % 10 - 5) * 0.2f};
+                sf::Vector2f particleVel = -vel * 0.2f + randomOffset;
+                particles.emplace_back(pos, particleVel);
+            }
+        }
+    }
     
 
+    //渲染粒子
+    void updateParticles(float dt) {
+        for (auto& p : particles) {
+            p.pos += p.vel;
+            p.lifetime -= dt;
+            p.color.a = static_cast<uint8_t>(255 * (p.lifetime / 0.5f));
+        }
+    
+        // 删除寿命结束的粒子
+        particles.erase(std::remove_if(particles.begin(), particles.end(),
+            [](const Particle& p) { return p.lifetime <= 0.f; }), particles.end());
+    }
 
 
 
@@ -148,6 +222,7 @@ public:
     void clearFailureStatus() { hasFailed = false; }
 
 };
+
 
 class Destination {
     sf::Vector2f pos;
@@ -220,7 +295,7 @@ public:
         // 正确构造 text（传入字体、字符串、字号）
         levelText(font, "level: 1", 24),
         scoreText(font, "score: 0", 24),
-        hintText(font, "mouse drag for starting \n  press R to restart", 18)
+        hintText(font, "mouse drag for starting \npress R to restart \npress Space to speed up \npress B to ues Lateral accelerator", 18)
     {
         if (!font.openFromFile("arial.ttf")) {
             std::cerr << "can not load arial.ttf\n";
@@ -337,6 +412,8 @@ int main() {
                 }
             }
 
+
+            //按R重置
             if (event->is<sf::Event::KeyPressed>()) {
                 auto keyEvent = event->getIf<sf::Event::KeyPressed>();
                 if (keyEvent) {
@@ -352,9 +429,33 @@ int main() {
                 }
             }
             
+
+            //boost1
+            if (event->is<sf::Event::KeyPressed>()) {
+                auto keyEvent = event->getIf<sf::Event::KeyPressed>();
+                if (keyEvent) {
+                    if (keyEvent->code == sf::Keyboard::Key::Space) {
+                        ship.boost1();
+                    }
+                }
+            }
+
+            //boost2
+            if (event->is<sf::Event::KeyPressed>()) {
+                auto keyEvent = event->getIf<sf::Event::KeyPressed>();
+                if (keyEvent) {
+                    if (keyEvent->code == sf::Keyboard::Key::B) {
+                        ship.boost2();
+                    }
+                }
+            }
+            
         }
 
-        ship.updatePhysics(blackHoles);
+
+        float deltaTime = clock.restart().asSeconds();
+
+        ship.updatePhysics(blackHoles,deltaTime);
 
         if (ship.getFailureStatus()) {
             sound.playFail();
@@ -384,7 +485,7 @@ int main() {
         }
         
 
-        float deltaTime = clock.restart().asSeconds();
+
         for (auto &bh : blackHoles) bh.update(deltaTime);
 
         window.clear(sf::Color(30, 30, 30));
