@@ -1,10 +1,8 @@
+# Environment files
 .vscode
 .env
 
+# Compiled files
 *.o
-
-build
-out
-
-SFML-3.0.0/
-*.zip
+*.exe
+build/
