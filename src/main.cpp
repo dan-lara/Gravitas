@@ -22,29 +22,42 @@ struct Particle {
 
 
 class GravitySource {
-    sf::Vector2f pos;
+    sf::Vector2f center;      // 旋转中心
+    float radius;             // 轨道半径
     float strength;
+    float angle = 0.f;        // 当前角度（单位：度）
+    float angularSpeed;       // 旋转速度（度/秒）
     sf::CircleShape shape;
 
 public:
-    GravitySource(float pos_x, float pos_y, float strength) {
-        pos = {pos_x, pos_y};
-        this->strength = strength;
-        shape.setPosition(sf::Vector2f(pos.x, pos.y));
-        shape.setFillColor(sf::Color::Black);
+    GravitySource(sf::Vector2f center, float radius, float strength, float angularSpeed)
+        : center(center), radius(radius), strength(strength), angularSpeed(angularSpeed) {
         shape.setRadius(20.f);
+        shape.setOrigin(sf::Vector2f(20.f, 20.f)); // SFML 3.0: setOrigin 只能用 Vector2f
+        shape.setFillColor(sf::Color::Black);
+        update(0); // 初始位置更新一次
     }
-
-    void render(sf::RenderWindow &window) { window.draw(shape); }
-    sf::Vector2f getPos() const { return pos; }
-    float getStrength() const { return strength; }
 
     void update(float dt) {
-        shape.rotate(sf::degrees(50 * dt));  // 旋转 50°/秒
+        angle += angularSpeed * dt;
+        float rad = angle * 3.14159265f / 180.f;
+        sf::Vector2f pos = center + sf::Vector2f(std::cos(rad) * radius, std::sin(rad) * radius);
+        shape.setPosition(pos);
     }
-    
-    
+
+    void render(sf::RenderWindow &window) {
+        window.draw(shape);
+    }
+
+    sf::Vector2f getPos() const {
+        return shape.getPosition();
+    }
+
+    float getStrength() const {
+        return strength;
+    }
 };
+
 
 
 class Spaceship {
@@ -247,41 +260,59 @@ public:
 };
 
 
+
+struct Level {
+    std::vector<GravitySource> blackHoles;
+    sf::Vector2f goalPos;
+
+    Level(std::vector<GravitySource> holes, sf::Vector2f goal)
+        : blackHoles(std::move(holes)), goalPos(goal) {}
+};
+
+
+
 class LevelManager {
     public:
-        int level;   // 当前关卡
-        int maxLevels;  // 最大关卡数
-        std::vector<std::vector<GravitySource>> levels;  // 关卡黑洞数据
-        std::vector<sf::Vector2f> goalPositions;  // 关卡目标点
+        int level = 0;
+        std::vector<Level> levels;
     
         LevelManager() {
-            level = 0;  // 初始关卡
-            maxLevels = 3;  // 关卡数（可以扩展）
+            levels.emplace_back(
+                std::vector<GravitySource>{
+                    GravitySource(sf::Vector2f(400, 400), 0.f, 150.f, 0.f)  // 静止黑洞
+                },
+                sf::Vector2f(1400, 200)
+            );
+        
+            levels.emplace_back(
+                std::vector<GravitySource>{
+                    GravitySource(sf::Vector2f(600, 500), 50.f, 200.f, 30.f),  // 黑洞围绕中心旋转
+                    GravitySource(sf::Vector2f(300, 300), 0.f, 100.f, 0.f)
+                },
+                sf::Vector2f(1200, 300)
+            );
+        
+            levels.emplace_back(
+                std::vector<GravitySource>{
+                    GravitySource(sf::Vector2f(500, 500), 0.f, 250.f, 0.f),
+                    GravitySource(sf::Vector2f(200, 200), 80.f, 100.f, -45.f),  // 逆时针旋转黑洞
+                    GravitySource(sf::Vector2f(800, 400), 100.f, 150.f, 60.f)   // 顺时针旋转黑洞
+                },
+                sf::Vector2f(1000, 500)
+            );
             
-            // 定义关卡：黑洞位置 & 目标点
-            levels = {
-                {GravitySource(400, 400, 150)},  // 关卡 1
-                {GravitySource(600, 500, 200), GravitySource(300, 300, 100)},  // 关卡 2
-                {GravitySource(500, 500, 250), GravitySource(200, 200, 100), GravitySource(800, 400, 150)}  // 关卡 3
-            };
+            
+        }
     
-            goalPositions = {
-                {1400, 200},  // 关卡 1 目标
-                {1200, 300},  // 关卡 2 目标
-                {1000, 500}   // 关卡 3 目标
-            };
+        Level& currentLevel() {
+            return levels[level];
         }
     
         void nextLevel() {
-            if (level < maxLevels - 1) {
-                level++;
-                std::cout << "enter " << level + 1 << std::endl;
-            } else {
-                std::cout << "Salut Dani" << std::endl;
-                level = 0;  // 重新开始
-            }
+            level = (level + 1) % levels.size();
         }
     };
+    
     
 
 class UIManager {
@@ -363,7 +394,8 @@ int main() {
     // };
 
     LevelManager levelManager;  // 添加关卡管理
-    std::vector<GravitySource> blackHoles = levelManager.levels[levelManager.level];  // 加载当前关卡黑洞
+    Level& current = levelManager.currentLevel();
+    std::vector<GravitySource>& blackHoles = current.blackHoles;
 
     sf::Clock clock;
 
@@ -375,7 +407,7 @@ int main() {
 
     Spaceship ship(200, 800);
     //Destination goal(1400, 200);
-    Destination goal(levelManager.goalPositions[levelManager.level].x, levelManager.goalPositions[levelManager.level].y);
+    Destination goal(current.goalPos.x, current.goalPos.y);
     UIManager ui;  // ✅ 添加 UI 管理器
 
     bool gameStarted = false;
@@ -420,8 +452,11 @@ int main() {
                     if (keyEvent->code == sf::Keyboard::Key::R) {
                         // 重置游戏状态
                         ship.reset(); // 重新创建飞船
-                        blackHoles = levelManager.levels[levelManager.level];
-                        goal = Destination(levelManager.goalPositions[levelManager.level].x, levelManager.goalPositions[levelManager.level].y);
+                        // 替换关卡内容
+                        Level& current = levelManager.currentLevel();
+                        blackHoles = current.blackHoles;
+                        goal = Destination(current.goalPos.x, current.goalPos.y);
+
                         gameStarted = false;        // 允许重新拖拽
                         dragging = false;
                         std::cout << "Game Reset!\n";
@@ -475,8 +510,11 @@ int main() {
                 score = 0;
                 std::cout << "next level\n";
                 levelManager.nextLevel();
-                blackHoles = levelManager.levels[levelManager.level];
-                goal = Destination(levelManager.goalPositions[levelManager.level].x, levelManager.goalPositions[levelManager.level].y);
+                // 替换关卡内容
+                Level& current = levelManager.currentLevel();
+                blackHoles = current.blackHoles;
+                goal = Destination(current.goalPos.x, current.goalPos.y);
+
                 ship.reset();
                 gameStarted = false;
             }
