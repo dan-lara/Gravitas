@@ -8,3 +8,7 @@
 *.dll
 *.so
 build/
+
+
+*.tar.gz
+*.zip
