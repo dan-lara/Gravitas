@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <iostream>
+#include <fstream>
+
 #include <vector>
 #include <optional>
 #include <cstdint>
@@ -279,27 +281,45 @@ class LevelManager {
         LevelManager() {
             levels.emplace_back(
                 std::vector<GravitySource>{
-                    GravitySource(sf::Vector2f(400, 400), 0.f, 150.f, 0.f)  // 静止黑洞
+                    GravitySource({400, 400}, 0.f, 150.f, 0.f)
                 },
                 sf::Vector2f(1400, 200)
             );
-        
+            
             levels.emplace_back(
                 std::vector<GravitySource>{
-                    GravitySource(sf::Vector2f(600, 500), 50.f, 200.f, 30.f),  // 黑洞围绕中心旋转
-                    GravitySource(sf::Vector2f(300, 300), 0.f, 100.f, 0.f)
+                    GravitySource({600, 500}, 50.f, 180.f, 45.f)
                 },
-                sf::Vector2f(1200, 300)
+                sf::Vector2f(1450, 100)
             );
-        
+            
             levels.emplace_back(
                 std::vector<GravitySource>{
-                    GravitySource(sf::Vector2f(500, 500), 0.f, 250.f, 0.f),
-                    GravitySource(sf::Vector2f(200, 200), 80.f, 100.f, -45.f),  // 逆时针旋转黑洞
-                    GravitySource(sf::Vector2f(800, 400), 100.f, 150.f, 60.f)   // 顺时针旋转黑洞
+                    GravitySource({400, 400}, 100.f, 100.f, 60.f),
+                    GravitySource({800, 400}, 100.f, 100.f, -60.f)
                 },
-                sf::Vector2f(1000, 500)
+                sf::Vector2f(1350, 100)
             );
+            
+            levels.emplace_back(
+                std::vector<GravitySource>{
+                    GravitySource({400, 600}, 0.f, 150.f, 0.f),
+                    GravitySource({500, 600}, 0.f, 150.f, 0.f),
+                    GravitySource({600, 600}, 0.f, 150.f, 0.f),
+                    GravitySource({700, 600}, 0.f, 150.f, 0.f)
+                },
+                sf::Vector2f(1000, 200)
+            );
+            
+            levels.emplace_back(
+                std::vector<GravitySource>{
+                    GravitySource({600, 500}, 120.f, 150.f, 90.f),
+                    GravitySource({1000, 400}, 80.f, 150.f, -120.f),
+                    GravitySource({800, 300}, 0.f, 200.f, 0.f)
+                },
+                sf::Vector2f(1450, 100)
+            );
+            
             
             
         }
@@ -377,6 +397,138 @@ public:
 };
 
 
+class MainMenu {
+    sf::Font font;
+
+    sf::Text titleText;
+    sf::Text inputLabel;
+    sf::Text playerInput;
+    sf::Text startButton;
+    sf::Text leaderboardButton;
+
+    std::string playerName;
+    bool inputActive = false;
+    int selectedIndex = 0; // 0: Start, 1: Leaderboard
+
+public:
+    MainMenu()
+        : titleText(font, "Gravity Adventure", 48),
+          inputLabel(font, "Enter Player ID:", 24),
+          playerInput(font, "|", 24),
+          startButton(font, "Start Game", 30),
+          leaderboardButton(font, "View Leaderboard", 30)
+    {
+        if (!font.openFromFile("arial.ttf")) {
+            std::cerr << "Failed to load font\n";
+        }
+
+        titleText.setPosition({600.f, 100.f});
+        titleText.setFillColor(sf::Color::White);
+
+        inputLabel.setPosition({600.f, 250.f});
+        inputLabel.setFillColor(sf::Color::White);
+
+        playerInput.setPosition({600.f, 290.f});
+        playerInput.setFillColor(sf::Color::Cyan);
+
+        startButton.setPosition({600.f, 350.f});
+        leaderboardButton.setPosition({600.f, 400.f});
+    }
+
+    void handleEvent(const sf::Event& event, bool& startGame, bool& viewLeaderboard) {
+        if (event.is<sf::Event::KeyPressed>()) {
+            auto key = event.getIf<sf::Event::KeyPressed>();
+            if (!key) return;
+    
+            if (key->code == sf::Keyboard::Key::Up) {
+                selectedIndex = (selectedIndex - 1 + 2) % 2;  // 向上选项
+            } else if (key->code == sf::Keyboard::Key::Down) {
+                selectedIndex = (selectedIndex + 1) % 2;      // 向下选项
+            } else if (key->code == sf::Keyboard::Key::Tab) {
+                inputActive = !inputActive;
+            } else if (key->code == sf::Keyboard::Key::Enter) {
+                if (selectedIndex == 0 && !playerName.empty()) {
+                    startGame = true;
+                } else if (selectedIndex == 1) {
+                    viewLeaderboard = true;
+                }
+            }
+        }
+    
+        if (event.is<sf::Event::TextEntered>() && inputActive) {
+            const auto* typed = event.getIf<sf::Event::TextEntered>();
+            if (!typed) return;
+    
+            if (typed->unicode == '\b') {
+                if (!playerName.empty()) playerName.pop_back();
+            } else if (typed->unicode < 128 && playerName.size() < 15) {
+                playerName += static_cast<char>(typed->unicode);
+            }
+            playerInput.setString(playerName + "|");
+        }
+    }
+    
+    void render(sf::RenderWindow& window) {
+        // 高亮按钮颜色
+        startButton.setFillColor(selectedIndex == 0 ? sf::Color::Green : sf::Color(100, 100, 100));
+        leaderboardButton.setFillColor(selectedIndex == 1 ? sf::Color::Yellow : sf::Color(100, 100, 100));
+
+        window.draw(titleText);
+        window.draw(inputLabel);
+        window.draw(playerInput);
+        window.draw(startButton);
+        window.draw(leaderboardButton);
+    }
+
+    std::string getPlayerName() const { return playerName; }
+    sf::Font& getFont() { return font; }
+};
+
+
+
+
+void renderLeaderboard(sf::RenderWindow& window, sf::Font& font) {
+    std::ifstream in("leaderboard.txt");
+    if (!in.is_open()) {
+        std::cerr << "fail to open\n";
+        return;
+    }
+
+    std::vector<std::pair<std::string, float>> entries;
+    std::string name;
+    float time;
+
+    while (in >> name >> time) {
+        entries.emplace_back(name, time);
+    }
+
+    // 排序：按时间升序
+    std::sort(entries.begin(), entries.end(), [](auto& a, auto& b) {
+        return a.second < b.second;
+    });
+
+    // 生成文本
+    sf::Text title(font, "[ Leaderboard ]", 36);
+    title.setFillColor(sf::Color::White);
+    title.setPosition(sf::Vector2f(600.f, 80.f));
+
+    window.draw(title);
+
+    int maxDisplay = std::min(10, static_cast<int>(entries.size()));
+
+    for (int i = 0; i < maxDisplay; ++i) {
+        const auto& entry = entries[i];
+        sf::Text line(font, std::to_string(i + 1) + ". " + entry.first + " - " + std::to_string(entry.second) + "s", 24);
+        line.setFillColor(sf::Color::Cyan);
+        line.setPosition(sf::Vector2f(600.f, 140.f + i * 30));
+        window.draw(line);
+    }
+
+    sf::Text backHint(font, "Press P to return", 18);
+    backHint.setFillColor(sf::Color(200, 200, 200));
+    backHint.setPosition(sf::Vector2f(600.f, 500.f));
+    window.draw(backHint);
+}
 
 
 
@@ -392,6 +544,17 @@ int main() {
     //     //GravitySource(800, 500, 200),
     //     GravitySource(400, 400, 150)
     // };
+
+    MainMenu menu;
+    bool inMenu = true;
+    bool inGame = false;
+    bool viewingLeaderboard = false;
+
+    std::string currentPlayerID;
+    sf::Clock gameClock;
+    float elapsedTime = 0.f;
+
+
 
     LevelManager levelManager;  // 添加关卡管理
     Level& current = levelManager.currentLevel();
@@ -420,6 +583,23 @@ int main() {
             if (event->is<sf::Event::Closed>()) window.close();
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) window.close();
 
+
+            //menu
+            if (inMenu) {
+                menu.handleEvent(*event, inGame, viewingLeaderboard);
+                if (inGame) {
+                    inMenu = false;
+                    currentPlayerID = menu.getPlayerName();
+                    gameClock.restart(); // 开始计时
+                } else if (viewingLeaderboard) {
+                    inMenu = false;  // ✅ 进入排行榜也要退出菜单状态
+                }
+                continue; // 主菜单状态，不继续执行下面的逻辑
+            }
+            
+            
+            
+            //lancer
             if (event->is<sf::Event::MouseButtonPressed>()) {
                 auto mouseEvent = event->getIf<sf::Event::MouseButtonPressed>();
                 if (mouseEvent && mouseEvent->button == sf::Mouse::Button::Left) {
@@ -445,7 +625,7 @@ int main() {
             }
 
 
-            //按R重置
+            //按R重置restart
             if (event->is<sf::Event::KeyPressed>()) {
                 auto keyEvent = event->getIf<sf::Event::KeyPressed>();
                 if (keyEvent) {
@@ -485,6 +665,8 @@ int main() {
                 }
             }
             
+
+
         }
 
 
@@ -527,6 +709,53 @@ int main() {
         for (auto &bh : blackHoles) bh.update(deltaTime);
 
         window.clear(sf::Color(30, 30, 30));
+
+        if (inMenu) {
+            menu.render(window);
+        }
+        else if (inGame) {
+            // 👇 渲染与更新游戏
+            // 保持原有的游戏逻辑和渲染代码
+            // 记得在胜利判断中加上时间记录：
+            if (goal.checkArrival(ship)) {
+                score += 10;
+                std::cout << "win!\n";
+                sound.playWin();
+                std::cout << "score: " << score << std::endl;
+            
+                if (levelManager.level == 4) {
+                    // 所有关卡完成
+                    elapsedTime = gameClock.getElapsedTime().asSeconds();
+                    std::cout << "Player " << currentPlayerID << " time: " << elapsedTime << "s\n";
+            
+                    // ✅ 保存分数到排行榜
+                    std::ofstream out("leaderboard.txt", std::ios::app);
+                    out << currentPlayerID << " " << elapsedTime << "\n";
+                    out.close();
+            
+                    // 切换回主菜单
+                    inGame = false;
+                    inMenu = true;
+            
+                    // 重置状态
+                    ship.reset();
+                    score = 0;
+                    levelManager.level = 0;
+                    blackHoles = levelManager.currentLevel().blackHoles;
+                    goal = Destination(levelManager.currentLevel().goalPos.x, levelManager.currentLevel().goalPos.y);
+                    continue;
+                } else {
+                    // 进入下一关
+                    levelManager.nextLevel();
+                    Level& current = levelManager.currentLevel();
+                    blackHoles = current.blackHoles;
+                    goal = Destination(current.goalPos.x, current.goalPos.y);
+                    ship.reset();
+                    gameStarted = false;
+                }
+            }
+            
+    
         for (auto &bh : blackHoles) bh.render(window);
         goal.render(window);
         ship.render(window);
@@ -563,6 +792,21 @@ int main() {
         
         ui.update(levelManager.level, score);  // ✅ 更新 UI
         ui.render(window);  // ✅ 渲染 UI
+
+        }
+        else if (viewingLeaderboard) {
+            // ✅ 显示排行榜】
+                renderLeaderboard(window, menu.getFont());
+            
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P)) {
+                    viewingLeaderboard = false;
+                    inMenu = true;
+                }
+            }
+            
+        
+
+        
 
 
 
