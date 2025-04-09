@@ -13,7 +13,7 @@
 
 #include "Spaceship.hpp"
 
-class Destination : {
+class Destination {
     sf::Vector2f pos;
     sf::CircleShape shape;
     int radius = 50;

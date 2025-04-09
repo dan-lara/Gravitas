@@ -16,7 +16,7 @@
 UIManager::UIManager():
     logoTexture("src/assets/imgs/gravitas.png"),
     logoSprite(logoTexture),
-    titleText(font, "Gravitas - A Gravity Adventure", 48),
+    titleText(font, "Gravitas - A Gravitational Adventure", 48),
     inputLabel(font, "Enter Player ID:", 24),
     playerInput(font, "|", 24),
     startButton(font, "Start Game", 30),
