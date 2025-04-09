@@ -17,7 +17,8 @@
 #define SOURCE_PATH "src/assets/imgs/spaceship.png"
 #define SOURCE_SCALE 1.f
 #define SOURCE_RADIUS 8.f
-#define SOURCE_COLOR sf::Color::Black
+// #define SOURCE_COLOR sf::Color::Black
+#define SOURCE_COLOR sf::Color(169, 169, 169)
 
 class GravitySource {
     sf::Vector2f center;      // Centre de rotation

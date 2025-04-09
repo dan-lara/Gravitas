@@ -157,7 +157,8 @@ int main() {
 
         for (auto &bh : blackHoles) bh.update(deltaTime);
 
-        window.clear(sf::Color(135, 206, 235)); // Sky blue color
+        // window.clear(sf::Color(169, 169, 169)); // Medium gray color
+        window.clear(sf::Color(0, 0, 0)); // Clear the window with black color
 
         if (inMenu) {
             menu.render(window, 0); // Menu principal

@@ -48,25 +48,18 @@ class GravitySource {
 }
 
 class Spaceship {
-    -sf::Vector2f pos
-    -sf::Vector2f vel
-    -sf::Vector2f pos0
-    -sf::CircleShape shape
-    -sf::Texture spaceshipTexture
-    -sf::Texture spaceshipTextureCrash
-    -sf::Sprite sprite
-    -std::vector<sf::Vector2f> trail
-    -bool active
-    -bool hasFailed
-    -std::vector<FuelParticle> fuelParticles
-    -bool boosting
-    -bool spriteLoaded
+    -Vector2f pos
+    -Vector2f vel
+    -Sprite sprite
+    -vector<Vector2f> trail
+    -vector<FuelParticle> fuelParticles
+
 
     +Spaceship() : Spaceship
-    +setVelocity(sf::Vector2f velocity) : void
+    +setVelocity(Vector2f velocity) : void
     +updatePhysics() : void
-    +render(sf::RenderWindow &window) : void
-    +predictTrajectory() : std::vector<sf::Vector2f>
+    +render() : void
+    +predictTrajectory() : vector<Vector2f>
     +boost() : void
     +updateParticles(float dt) : void
     +getters() : objet
@@ -80,22 +73,22 @@ class UIManager {
 
     +UIManager()
     +handleEvent() : void
-    +render(sf::RenderWindow window, int page) : void
-    +renderMainMenu(sf::RenderWindow window) : void
-    +renderLeaderboard(sf::RenderWindow window) : void
-    +renderGame(sf::RenderWindow window) : void
+    +render(RenderWindow window, int page) : void
+    +renderMainMenu(RenderWindow window) : void
+    +renderLeaderboard(RenderWindow window) : void
+    +renderGame(RenderWindow window) : void
     +updateGameInfo(int level, int score) : void
     +getPlayerName() : string
-    +getFont() : sf::Font
+    +getFont() : Font
 }
 
 class SoundManager {
-    -sf::SoundBuffer launchBuffer
-    -sf::SoundBuffer winBuffer
-    -sf::SoundBuffer failBuffer
-    -sf::Sound launchSound
-    -sf::Sound winSound
-    -sf::Sound failSound
+    -SoundBuffer launchBuffer
+    -SoundBuffer winBuffer
+    -SoundBuffer failBuffer
+    -Sound launchSound
+    -Sound winSound
+    -Sound failSound
 
     +SoundManager()
     +playLaunch() : void
@@ -114,8 +107,8 @@ class LevelManager {
 }
 
 class Destination {
-    -sf::Vector2f pos
-    -sf::CircleShape shape
+    -Vector2f pos
+    -CircleShape shape
     -int radius
 
     +Destination() : Destination
