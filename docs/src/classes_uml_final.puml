@@ -1,0 +1,138 @@
+@startuml Gravitas
+
+enum LEVEL {
+    WARNING,
+    ERROR,
+    INFO,
+    DEBUG
+}
+class Logger {
+    -LEVEL niveau
+    -string message
+    -string fichierLog
+    +log(LEVEL niveau, string message) : void
+    +log(string message) : void
+    +fermer() : void
+    +getTimestamp() : string
+    +levelToString(LEVEL niveau) : string
+}
+
+class Particle {
+    -Vecteur pos
+    -Vecteur vel
+    -float radius
+    -Couleur color
+    -Shape shape
+
+    +Particle() : Particle
+    +set_color(Couleur color) : void
+    +render(Renderer window) : void
+    +updatePhysics(GravitySource source) : void
+}
+
+class GravitySource {
+    -Vecteur center
+    -float angularSpeed
+    -float angle
+    -Couleur color
+    -Shape shape
+    -Texture texture
+    -Sprite sprite
+
+    +GravitySource()
+
+    +update(float dt) : void
+    +render(Renderer window) : void
+    +getters() : objet
+    +setters() : void
+}
+
+class Spaceship {
+    -Vector2f pos
+    -Vector2f vel
+    -Sprite sprite
+    -vector<Vector2f> trail
+    -vector<FuelParticle> fuelParticles
+
+
+    +Spaceship() : Spaceship
+    +setVelocity(Vector2f velocity) : void
+    +updatePhysics() : void
+    +render() : void
+    +predictTrajectory() : vector<Vector2f>
+    +boost() : void
+    +updateParticles(float dt) : void
+    +getters() : objet
+    +setters() : void
+}
+
+class UIManager {
+    -string playerName
+    -bool inputActive
+    -int selectedIndex
+
+    +UIManager()
+    +handleEvent() : void
+    +render(RenderWindow window, int page) : void
+    +renderMainMenu(RenderWindow window) : void
+    +renderLeaderboard(RenderWindow window) : void
+    +renderGame(RenderWindow window) : void
+    +updateGameInfo(int level, int score) : void
+    +getPlayerName() : string
+    +getFont() : Font
+}
+
+class SoundManager {
+    -SoundBuffer launchBuffer
+    -SoundBuffer winBuffer
+    -SoundBuffer failBuffer
+    -Sound launchSound
+    -Sound winSound
+    -Sound failSound
+
+    +SoundManager()
+    +playLaunch() : void
+    +playWin() : void
+    +playFail() : void
+}
+
+class LevelManager {
+    -int level
+    -List<Level> levels
+
+    +LevelManager()
+    +LevelManager(List<Level> levels)
+    +nextLevel() : void
+    +currentLevel() : Level
+}
+
+class Destination {
+    -Vector2f pos
+    -CircleShape shape
+    -int radius
+
+    +Destination() : Destination
+    +render() : void
+    +checkArrival() : bool
+}
+
+' Associations entre les classes
+Main --> Particle : utilise
+Main --> Spaceship : utilise
+Spaceship --> GravitySource : utilise
+UIManager --> LevelManager : utilise
+Main --> UIManager : utilise
+UIManager --> SoundManager : utilise
+' Main --> Logger : utilise
+LevelManager --> Destination : utilise
+
+class Main {
+    +Main() : Main
+    +run() : void
+}
+
+Logger --> LEVEL : niveau
+
+' OpenGLRenderer "1" *-- "1" Camera3D: contient
+
+@enduml
