@@ -16,7 +16,7 @@ FetchContent_MakeAvailable(SFML)
 
 include_directories(src/libs src/assets)
 file(GLOB_RECURSE LIB_SOURCES src/libs/*.cpp)
-file(GLOB_RECURSE LIB_HEADERS src/libs/*.hpp)
+file(GLOB_RECURSE LIB_HEADERS src/libs/include/*.hpp)
 file(GLOB_RECURSE ASSET_FILES src/assets/*)
 
 # Define a macro for the assets directory
